@@ -767,7 +767,7 @@ void BuildTables (void)
 //
   for (i=0;i<SHIFTFRAMES;i++)
   {
-    angle = (long)ANGLES*i/SHIFTFRAMES;
+    angle = (long)ANGLES*128/SHIFTFRAMES;
     value = FixedByFrac(7*GLOBAL1,sintable[angle]);
     yshift[i] = SCREENWIDTH*(FixedAdd(value,8*GLOBAL1)>>16);
   }
