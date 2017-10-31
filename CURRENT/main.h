@@ -18,10 +18,30 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "graphdef.h"
 
-#define EXTENSION	"HOV"
+#define EXTENSION "HOV"
 
 typedef unsigned long u_long;
 typedef unsigned int u_int;
 typedef unsigned short int u_short;
 typedef unsigned char u_char;
+
+typedef struct
+{
+  u_short headersize;
+  u_char dictionary;
+  u_short dataoffsets;
+} grheadtype;
+
+typedef struct
+{
+  unsigned long bit0,bit1;	// 0-255 is a character, > is a pointer to a node
+} huffnode;
+
+extern huffnode *grhuffman;
+
+//protos
+void LoadNearData(void);
+void InitGrFile(void);
+void OptimizeNodes (huffnode *);
