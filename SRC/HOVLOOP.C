@@ -209,7 +209,7 @@ void StartLevel (unsigned far *plane1)
 	    SpawnTank (gx+TILEGLOBAL/2,gy+TILEGLOBAL/2);
 	    break;
 	  case 4:
-	    //SpawnMutant (gx+TILEGLOBAL/2,gy+TILEGLOBAL/2);
+	    SpawnMutant (gx+TILEGLOBAL/2,gy+TILEGLOBAL/2);
 	    break;
 	  case 5:
 	    SpawnShield (gx,gy);
