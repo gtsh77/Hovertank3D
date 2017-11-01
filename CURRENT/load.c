@@ -1,12 +1,8 @@
 #include "lib.c"
 
-//handle to egagraph, kept open allways
-static FILE *grhandle;
-// array of offsets in egagraph, -1 for sparse
-int *grstarts;
-// compressed length of a chunk
-u_int chunkcomplen;
-
+FILE *grhandle;
+int32_t *grstarts;
+uint32_t chunkcomplen;
 grheadtype *grhead;
 huffnode *grhuffman;
 
@@ -26,27 +22,16 @@ huffnode *grhuffman;
 
 void LoadNearData (void)
 {
-	u_int length;
-	FILE *handle;
-
-	handle = fopen("../DIST/EGAHEAD."EXTENSION,"rb+");
-	if(handle == NULL) printf("ERROR 1\n");
-
-	grhandle = fopen("../DIST/EGAGRAPH."EXTENSION, "rb");
-	if(grhandle == NULL) printf("ERROR 2\n");
-
-	//get filelength
-	fseek(handle, 0L, SEEK_END);
-	length = ftell(handle);
-	//printf("egahead length: %d\n",length);	
-	//alloc mem
+	FILE* file;
+	uint16_t length;
+	file = fopen("../DIST/EGAHEAD."EXTENSION,"rb+");
+	if(file == NULL) printf("ERROR 1\n");
+	fseek(file, 0, 2);
+	length = ftell(file);
 	grhead = malloc(length);
-	//return cursor to the beginning
-	rewind(handle);
-	//read stream to grhead
-	fread(grhead,sizeof(length),length,handle);
-	//close stream
-	fclose(handle);
+	fseek(file, 0, 0);
+	fread(grhead,length,1,file);
+	fclose(file);
 }
 
 /*
@@ -64,10 +49,10 @@ void LoadNearData (void)
 
 long GetChunkLength (u_int chunk)
 {
-  u_int len;
-  fseek(grhandle,grstarts[chunk],SEEK_SET);
+  int32_t len;
+  fseek(grhandle,grstarts[chunk],0);
   fread(&len,sizeof(len),1,grhandle);
-  chunkcomplen = grstarts[chunk+1]-grstarts[chunk]-4; //???
+  chunkcomplen = grstarts[chunk+1]-grstarts[chunk]-4;
   printf("chunkcomplen: %d\n",chunkcomplen);
   return len;
 }
@@ -82,14 +67,16 @@ long GetChunkLength (u_int chunk)
 
 void InitGrFile (void)
 {
-	grhuffman = (huffnode *)( ((u_char *)grhead)+grhead->dictionary);
-	grstarts = (u_int *)( ((u_char *)grhead)+grhead->dataoffsets);
-	OptimizeNodes(grhuffman);
-
-	printf("length of STRUCTPIC: %d\n",GetChunkLength(STRUCTPIC));
-
 	printf("headersize: %d\n",grhead->headersize);
 	printf("dictionary: %d\n",grhead->dictionary);
-	printf("dataoffsets: %d\n",grhead->dataoffsets);
-	//printf("address: %p\n",(u_int *)((char *)grhead+grhead->dataoffsets));	
+	printf("dataoffsets: %d\n",grhead->dataoffsets);	
+
+	grhuffman = (huffnode *)( ((int8_t *)grhead)+grhead->dictionary);
+	grstarts = (int32_t *)( ((int8_t *)grhead)+grhead->dataoffsets);
+	OptimizeNodes(grhuffman);
+
+	grhandle = fopen("../DIST/EGAGRAPH."EXTENSION, "rb+");
+	if(grhandle == NULL) printf("ERROR 2\n");
+	printf("length of STRUCTPIC: %d\n",GetChunkLength(STRUCTPIC));
 }
+

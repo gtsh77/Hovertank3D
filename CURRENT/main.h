@@ -18,26 +18,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "graphdef.h"
 
 #define EXTENSION "HOV"
 
-typedef unsigned long u_long;
-typedef unsigned int u_int;
-typedef unsigned short int u_short;
-typedef unsigned char u_char;
+typedef struct
+{
+  uint16_t headersize;
+  uint32_t dictionary;
+  uint32_t dataoffsets;
+} __attribute__((packed)) grheadtype;
 
 typedef struct
 {
-  u_short headersize;
-  u_char dictionary;
-  u_short dataoffsets;
-} grheadtype;
-
-typedef struct
-{
-  unsigned long bit0,bit1;	// 0-255 is a character, > is a pointer to a node
-} huffnode;
+  uint16_t bit0,bit1;	// 0-255 is a character, > is a pointer to a node
+} __attribute__((packed)) huffnode;
 
 extern huffnode *grhuffman;
 
