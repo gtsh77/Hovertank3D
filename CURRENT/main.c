@@ -23,6 +23,6 @@
 int main (void)
 {
 	LoadNearData();
-	InitGrFile();
+	SetupGraphics();
 	return 0;
 }

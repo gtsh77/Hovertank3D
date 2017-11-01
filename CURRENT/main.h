@@ -18,10 +18,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "graphdef.h"
 
 #define EXTENSION "HOV"
+
+#define BLOCK 32
+#define MASKBLOCK 40
 
 typedef struct
 {
@@ -32,13 +36,21 @@ typedef struct
 
 typedef struct
 {
-  uint16_t bit0,bit1;	// 0-255 is a character, > is a pointer to a node
+  uint8_t bit0,bit1;	// 0-255 is a character, > is a pointer to a node
 } __attribute__((packed)) huffnode;
 
+
+extern uint8_t *buffer;
 extern huffnode *grhuffman;
+extern FILE *grhandle;
+extern int32_t *grstarts;
+extern huffnode *grhuffman;
+extern uint8_t **grsegs;
 
 //protos
 void LoadNearData(void);
 void InitGrFile(void);
 void OptimizeNodes (huffnode *);
 void HuffExpand (uint8_t *, uint8_t *, int32_t, huffnode *);
+void SetupGraphics (void);
+void CachePic (int picnum);

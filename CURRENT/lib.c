@@ -64,6 +64,7 @@ void HuffExpand (uint8_t *source, uint8_t *dest,
     if (code<256)
     {
       *dest++=code;
+      printf("%d\n",code);
       nodeon=headptr;
       length--;
     }

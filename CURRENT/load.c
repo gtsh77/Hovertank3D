@@ -1,13 +1,14 @@
 #include "lib.c"
 
 FILE *grhandle;
-int32_t *grstarts;
-uint32_t chunkcomplen;
-grheadtype *grhead;
 huffnode *grhuffman;
+uint8_t *buffer;
+uint8_t **grsegs;
+int32_t *grstarts;
 
-
-// FUNCS
+static uint8_t *pictable;
+static uint32_t chunkcomplen;
+static grheadtype *grhead;
 
 /*
 ============================
@@ -69,7 +70,11 @@ long GetChunkLength (u_int chunk)
 
 void InitGrFile (void)
 {
-	uint8_t *buffer, *pictable;
+	//init multi-use [MU] buffer (AIM)
+	buffer = (uint8_t *)malloc(1000);
+
+	//init grsegs w zeros (AIM)
+	grsegs = (uint8_t **)calloc(100,100);
 
 	//
 	// calculate some offsets in the header
@@ -89,10 +94,114 @@ void InitGrFile (void)
 	//
 	// load the pic and sprite headers into the data segment
 	//
+
+	// make sure this chunk never reloads
+	grsegs[STRUCTPIC] = malloc(1);
+	grsegs[STRUCTPIC][0] = 1;
+
 	GetChunkLength(STRUCTPIC);
+	//clear our MU-buffer (AIM)
+	memset(buffer, 0, chunkcomplen);
 	buffer = (uint8_t *)malloc(chunkcomplen);
-	pictable = (uint8_t *)malloc(1000); //!!определить длину пиктейбла
+	pictable = (uint8_t *)malloc(chunkcomplen);
 	fread(buffer,chunkcomplen,1,grhandle);
-	HuffExpand(buffer, pictable, 1000, grhuffman);
+	HuffExpand(buffer, pictable, chunkcomplen, grhuffman);
 }
 
+// CachePic(), SC_MakeShape(), CacheGrFile(), SetupGraphics(), SC_MakeShape()
+
+
+/*
+====================
+=
+= SetupGraphics
+=
+====================
+*/
+
+void SetupGraphics (void)
+{
+  uint16_t i;
+
+  InitGrFile ();        // load the graphic file header
+
+//
+// go through the pics and make scalable shapes, the discard the pic
+//
+
+  for (i=MAN1PIC;i<DASHPIC;i++)
+  {
+    CachePic (STARTPICS+i);
+    // SC_MakeShape(
+    //   grsegs[STARTPICS+i],
+    //   pictable[i].width,
+    //   pictable[i].height,
+    //   &scalesegs[i]
+    // );
+    //MMFreePtr (&grsegs[STARTPICS+i]);
+  }	
+}
+
+/*
+=====================
+=
+= CachePic
+=
+= Make sure a graphic chunk is in memory
+=
+=====================
+*/
+
+void CachePic (int picnum)
+{
+  int32_t expanded,compressed;     // chunk lengths
+  uint8_t *bigbufferseg;          // for compressed
+
+  if (grsegs[picnum])
+    return;
+
+  fseek(grhandle,grstarts[picnum],0);
+
+  compressed = grstarts[picnum+1]-grstarts[picnum]-4;
+
+  if (picnum>=STARTTILE8)
+  {
+  //
+  // tiles are of a known size
+  //
+    if (picnum<STARTTILE8M)             // tile 8s are all in one chunk!
+      expanded = BLOCK*NUMTILE8;
+    else if (picnum<STARTTILE16)
+      expanded = MASKBLOCK*NUMTILE8M;
+    else if (picnum<STARTTILE16M)       // all other tiles are one/chunk
+      expanded = BLOCK*4;
+	 else if (picnum<STARTTILE32)
+      expanded = MASKBLOCK*4;
+    else if (picnum<STARTTILE32M)
+      expanded = BLOCK*16;
+    else
+      expanded = MASKBLOCK*16;
+
+    compressed = grstarts[picnum+1]-grstarts[picnum];
+  }
+  else
+  {
+  //
+  // other things have a length header at start of chunk
+  //
+    //read(grhandle,&expanded,sizeof(expanded));
+    printf("%d true\n",picnum);
+    fread(&expanded,sizeof(expanded),1,grhandle);
+    compressed = grstarts[picnum+1]-grstarts[picnum]-4;
+  }
+
+  //
+  // allocate space for expanded chunk
+  //
+
+  grsegs[picnum] = (uint8_t *)malloc(expanded);
+  memset(buffer, 0, compressed);
+  fseek(grhandle,grstarts[picnum],0);
+  fread(buffer,compressed,1,grhandle);
+  HuffExpand (buffer, grsegs[picnum], expanded, grhuffman);
+}
