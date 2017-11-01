@@ -41,3 +41,4 @@ extern huffnode *grhuffman;
 void LoadNearData(void);
 void InitGrFile(void);
 void OptimizeNodes (huffnode *);
+void HuffExpand (uint8_t *, uint8_t *, int32_t, huffnode *);

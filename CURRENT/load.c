@@ -24,6 +24,7 @@ void LoadNearData (void)
 {
 	FILE* file;
 	uint16_t length;
+
 	file = fopen("../DIST/EGAHEAD."EXTENSION,"rb+");
 	if(file == NULL) printf("ERROR 1\n");
 	fseek(file, 0, 2);
@@ -50,6 +51,7 @@ void LoadNearData (void)
 long GetChunkLength (u_int chunk)
 {
   int32_t len;
+
   fseek(grhandle,grstarts[chunk],0);
   fread(&len,sizeof(len),1,grhandle);
   chunkcomplen = grstarts[chunk+1]-grstarts[chunk]-4;
@@ -67,16 +69,30 @@ long GetChunkLength (u_int chunk)
 
 void InitGrFile (void)
 {
-	printf("headersize: %d\n",grhead->headersize);
-	printf("dictionary: %d\n",grhead->dictionary);
-	printf("dataoffsets: %d\n",grhead->dataoffsets);	
+	uint8_t *buffer, *pictable;
+
+	//
+	// calculate some offsets in the header
+	//	
 
 	grhuffman = (huffnode *)( ((int8_t *)grhead)+grhead->dictionary);
 	grstarts = (int32_t *)( ((int8_t *)grhead)+grhead->dataoffsets);
 	OptimizeNodes(grhuffman);
 
+	//
+	// Open the graphics file, leaving it open until the game is finished
+	//	
+
 	grhandle = fopen("../DIST/EGAGRAPH."EXTENSION, "rb+");
 	if(grhandle == NULL) printf("ERROR 2\n");
-	printf("length of STRUCTPIC: %d\n",GetChunkLength(STRUCTPIC));
+
+	//
+	// load the pic and sprite headers into the data segment
+	//
+	GetChunkLength(STRUCTPIC);
+	buffer = (uint8_t *)malloc(chunkcomplen);
+	pictable = (uint8_t *)malloc(1000); //!!определить длину пиктейбла
+	fread(buffer,chunkcomplen,1,grhandle);
+	HuffExpand(buffer, pictable, 1000, grhuffman);
 }
 
